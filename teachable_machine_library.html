@@ -82,7 +82,7 @@
             model = await tmImage.load(modelURL, metadataURL);
             maxPredictions = model.getTotalClasses();
 
-            // ✅ 해상도 크게, flip true, 전면카메라
+            
             webcam = new tmImage.Webcam(600, 600, true, false, {
                 facingMode: "user"
             });
