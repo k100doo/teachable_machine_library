@@ -28,6 +28,12 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
+
+        #webcam-container canvas {
+            transform: scale(1.5);
+            transform-origin: center center;
+        }
+
         #label-container div {
             margin-top: 5px;
             font-size: 16px;
@@ -63,7 +69,7 @@
 
         let currentState = "";
         let stateStartTime = null;
-        const HOLD_DURATION = 30 * 1000; // 30초 (테스트용). 실제 운영 시 30 * 60 * 1000
+        const HOLD_DURATION = 30 * 1000;
 
         async function init() {
             const modelURL = URL + "model.json";
@@ -72,9 +78,8 @@
             model = await tmImage.load(modelURL, metadataURL);
             maxPredictions = model.getTotalClasses();
 
-            const flip = true;
             webcam = new tmImage.Webcam(400, 400, false, false, {
-            facingMode: "environment"
+                facingMode: "user" 
             });
             await webcam.setup();
             await webcam.play();
@@ -97,7 +102,6 @@
         async function predict() {
             const prediction = await model.predict(webcam.canvas);
 
-            // 가장 확률 높은 클래스 선택
             let topPrediction = prediction[0];
             for (let i = 1; i < prediction.length; i++) {
                 if (prediction[i].probability > topPrediction.probability) {
@@ -124,7 +128,6 @@
                 stateStartTime = null;
             }
 
-            // 첫 줄에 상태 표시
             let statusText = "";
             if (currentState === "경고") {
                 statusText = "자리를 비운지 30분 이상 지났습니다. 확인해 주세요";
@@ -133,7 +136,6 @@
             }
             labelContainer.childNodes[0].innerHTML = statusText;
 
-            // 나머지 확률 출력
             for (let i = 0; i < maxPredictions; i++) {
                 const labelName = prediction[i].className === "자리 차지" ? "자리 있음" : prediction[i].className;
                 const classPrediction = labelName + ": " + prediction[i].probability.toFixed(2);
