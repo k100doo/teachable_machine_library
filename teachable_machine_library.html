@@ -26,12 +26,16 @@
             padding: 10px;
             background: white;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            height: 400px;
+            overflow: hidden;
         }
 
-
+        /* ✅ 비디오 확대 효과 */
         #webcam-container canvas {
-            transform: scale(1.5);
-            transform-origin: center center;
+            width: 400px;
+            height: 400px;
+            object-fit: cover;
         }
 
         #label-container div {
@@ -78,9 +82,11 @@
             model = await tmImage.load(modelURL, metadataURL);
             maxPredictions = model.getTotalClasses();
 
-            webcam = new tmImage.Webcam(400, 400, false, false, {
-                facingMode: "user" 
+            // ✅ 해상도 크게, flip true, 전면카메라
+            webcam = new tmImage.Webcam(600, 600, true, false, {
+                facingMode: "user"
             });
+
             await webcam.setup();
             await webcam.play();
             window.requestAnimationFrame(loop);
