@@ -20,18 +20,17 @@
         }
 
         #webcam-container {
-            margin: 20px 0;
+            width: 400px;
+            height: 400px;
+            overflow: hidden;
+            margin: 20px 0 10px 0;
             border: 2px solid #ccc;
             border-radius: 10px;
             padding: 10px;
             background: white;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            width: 400px;
-            height: 400px;
-            overflow: hidden;
         }
 
-    
         #webcam-container canvas {
             width: 400px;
             height: 400px;
@@ -44,7 +43,14 @@
             font-weight: bold;
         }
 
+        #warning-message {
+            margin-top: 10px;
+            color: red;
+            font-weight: bold;
+        }
+
         button {
+            margin: 5px;
             padding: 10px 20px;
             font-size: 16px;
             background-color: #007bff;
@@ -61,42 +67,57 @@
 </head>
 <body>
     <h1>공용 도서관 자리</h1>
-    <button type="button" onclick="init()">Start</button>
+    <button onclick="init()">📷 Start</button>
+    <button onclick="toggleCamera()">🔄 카메라 전환</button>
     <div id="webcam-container"></div>
     <div id="label-container"></div>
+    <div id="warning-message"></div> <!-- 🔔 메시지 영역 -->
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
-    <script type="text/javascript">
+    <script>
         const URL = "https://teachablemachine.withgoogle.com/models/A4I8Tyjg_/";
         let model, webcam, labelContainer, maxPredictions;
-
+        let currentFacingMode = "user";
         let currentState = "";
         let stateStartTime = null;
-        const HOLD_DURATION = 30 * 1000;
+        const HOLD_DURATION = 15 * 1000; // 15초로 설정
+
+        function toggleCamera() {
+            currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
+            init();
+        }
 
         async function init() {
+            if (webcam) await webcam.stop();
+
             const modelURL = URL + "model.json";
             const metadataURL = URL + "metadata.json";
 
-            model = await tmImage.load(modelURL, metadataURL);
-            maxPredictions = model.getTotalClasses();
+            if (!model) {
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+            }
 
-            
             webcam = new tmImage.Webcam(400, 400, true, false, {
-                facingMode: "user"
+                facingMode: currentFacingMode
             });
 
             await webcam.setup();
             await webcam.play();
             window.requestAnimationFrame(loop);
 
-            document.getElementById("webcam-container").appendChild(webcam.canvas);
+            const container = document.getElementById("webcam-container");
+            container.innerHTML = "";
+            container.appendChild(webcam.canvas);
+
             labelContainer = document.getElementById("label-container");
             labelContainer.innerHTML = "";
             for (let i = 0; i < maxPredictions + 1; i++) {
                 labelContainer.appendChild(document.createElement("div"));
             }
+
+            document.getElementById("warning-message").innerText = "";
         }
 
         async function loop() {
@@ -107,7 +128,6 @@
 
         async function predict() {
             const prediction = await model.predict(webcam.canvas);
-
             let topPrediction = prediction[0];
             for (let i = 1; i < prediction.length; i++) {
                 if (prediction[i].probability > topPrediction.probability) {
@@ -126,20 +146,18 @@
                 if (currentState !== "자리 있음") {
                     currentState = "자리 있음";
                     stateStartTime = now;
+                    document.getElementById("warning-message").innerText = ""; // 초기화
                 } else if (now - stateStartTime >= HOLD_DURATION) {
-                    currentState = "경고";
+                    document.getElementById("warning-message").innerText =
+                        "자리를 비운지 30분이 지났습니다. 확인해 주세요";
                 }
             } else {
                 currentState = detectedLabel;
                 stateStartTime = null;
+                document.getElementById("warning-message").innerText = ""; // 상태 변경 시 메시지 제거
             }
 
-            let statusText = "";
-            if (currentState === "경고") {
-                statusText = "자리를 비운지 30분 이상 지났습니다. 확인해 주세요";
-            } else {
-                statusText = "상태: " + currentState;
-            }
+            const statusText = "상태: " + currentState;
             labelContainer.childNodes[0].innerHTML = statusText;
 
             for (let i = 0; i < maxPredictions; i++) {
