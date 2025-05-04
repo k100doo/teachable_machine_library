@@ -73,7 +73,7 @@
             maxPredictions = model.getTotalClasses();
 
             const flip = true;
-            webcam = new tmImage.Webcam(400, 400, true, false, {
+            webcam = new tmImage.Webcam(400, 400, false, false, {
             facingMode: "environment"
             });
             await webcam.setup();
