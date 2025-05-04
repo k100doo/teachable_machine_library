@@ -68,25 +68,18 @@
 <body>
     <h1>공용 도서관 자리</h1>
     <button onclick="init()">📷 Start</button>
-    <button onclick="toggleCamera()">🔄 카메라 전환</button>
     <div id="webcam-container"></div>
     <div id="label-container"></div>
-    <div id="warning-message"></div> <!-- 🔔 메시지 영역 -->
+    <div id="warning-message"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <script>
         const URL = "https://teachablemachine.withgoogle.com/models/A4I8Tyjg_/";
         let model, webcam, labelContainer, maxPredictions;
-        let currentFacingMode = "user";
         let currentState = "";
         let stateStartTime = null;
-        const HOLD_DURATION = 15 * 1000; // 15초로 설정
-
-        function toggleCamera() {
-            currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
-            init();
-        }
+        const HOLD_DURATION = 15 * 1000;
 
         async function init() {
             if (webcam) await webcam.stop();
@@ -99,10 +92,7 @@
                 maxPredictions = model.getTotalClasses();
             }
 
-            webcam = new tmImage.Webcam(400, 400, true, false, {
-                facingMode: currentFacingMode
-            });
-
+            webcam = new tmImage.Webcam(400, 400, true); // 전면 카메라 + flip
             await webcam.setup();
             await webcam.play();
             window.requestAnimationFrame(loop);
@@ -146,7 +136,7 @@
                 if (currentState !== "자리 있음") {
                     currentState = "자리 있음";
                     stateStartTime = now;
-                    document.getElementById("warning-message").innerText = ""; // 초기화
+                    document.getElementById("warning-message").innerText = "";
                 } else if (now - stateStartTime >= HOLD_DURATION) {
                     document.getElementById("warning-message").innerText =
                         "자리를 비운지 30분이 지났습니다. 확인해 주세요";
@@ -154,7 +144,7 @@
             } else {
                 currentState = detectedLabel;
                 stateStartTime = null;
-                document.getElementById("warning-message").innerText = ""; // 상태 변경 시 메시지 제거
+                document.getElementById("warning-message").innerText = "";
             }
 
             const statusText = "상태: " + currentState;
